@@ -22,11 +22,10 @@ export function BottomNav() {
     { href: '/', icon: Home, label: 'Home' },
     { href: '/search', icon: Search, label: 'Search', isAction: true },
   ];
-
+  
   const navItems = [...baseNavItems];
-
   if (user && user.role === 'seller') {
-    navItems.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add' });
+      navItems.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add' });
   }
 
   navItems.push(
@@ -36,11 +35,12 @@ export function BottomNav() {
 
 
   const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    e.preventDefault();
     if (href === '/search') {
+      e.preventDefault();
       setSearchOpen(true);
     }
     if (href === '/cart') {
+      e.preventDefault();
       setCartOpen(true);
     }
   };
@@ -52,18 +52,15 @@ export function BottomNav() {
           {navItems.map(({ href, icon: Icon, label, isAction }) => {
             const isActive = pathname === href && !isAction;
             
-            const linkProps: any = {};
-            if (!isAction) {
-                linkProps.href = href;
-            } else {
-                linkProps.href = '#';
-            }
+            const linkProps: any = {
+              href: href,
+              onClick: (e:any) => isAction && handleNavClick(e, href)
+            };
             
             return (
               <Link
                 key={label}
                 {...linkProps}
-                onClick={(e) => isAction && handleNavClick(e, href)}
                 className={cn(
                   "inline-flex flex-col items-center justify-center px-5 hover:bg-muted group h-full",
                   isActive && "text-primary"
