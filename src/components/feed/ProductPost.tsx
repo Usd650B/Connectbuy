@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { Heart, MessageCircle, Share2, Bookmark, ShoppingCart } from "lucide-react";
+import { Heart, Bookmark, Share2, ShoppingCart } from "lucide-react";
 import type { Product } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -64,6 +64,7 @@ export function ProductPost({ product }: ProductPostProps) {
         layout="fill"
         objectFit="cover"
         className="z-0"
+        priority
         data-ai-hint="fashion product"
       />
       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 z-10"></div>

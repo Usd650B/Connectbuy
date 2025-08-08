@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, ShoppingCart, Feather, User, ArrowLeft } from "lucide-react";
+import { Search, ShoppingCart, Feather, User, ArrowLeft, LogOut, PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { CartSheet } from "@/components/cart/CartSheet";
@@ -18,6 +18,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export function AppHeader() {
   const { itemCount } = useCart();
@@ -25,9 +28,12 @@ export function AppHeader() {
   const [isSearchOpen, setSearchOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading } = useAuth();
 
-  // Mock user state
-  const user = { name: "Jane Doe" };
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/");
+  };
 
   const showBackButton = pathname !== "/";
 
@@ -51,7 +57,9 @@ export function AppHeader() {
           </div>
           <div className="hidden md:flex items-center gap-4 text-sm font-medium font-headline">
              <Link href="/" className={cn("text-foreground/80 hover:text-foreground transition-colors", pathname === '/' && "text-primary font-bold")}>Home</Link>
-             <Link href="/creator-studio" className={cn("text-foreground/80 hover:text-foreground transition-colors", pathname === '/creator-studio' && "text-primary font-bold")}>Creator Studio</Link>
+             {user && user.role === 'seller' && (
+                <Link href="/creator-studio" className={cn("text-foreground/80 hover:text-foreground transition-colors", pathname === '/creator-studio' && "text-primary font-bold")}>My Shop</Link>
+             )}
           </div>
 
           <div className="flex items-center gap-4">
@@ -83,31 +91,44 @@ export function AppHeader() {
             </Button>
             
             <div className="hidden md:flex items-center gap-4 text-sm font-medium font-headline">
-               {user ? (
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                        <User className="h-5 w-5" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end" forceMount>
-                      <DropdownMenuLabel className="font-normal">
-                        <div className="flex flex-col space-y-1">
-                          <p className="text-sm font-medium leading-none">{user.name}</p>
-                          <p className="text-xs leading-none text-muted-foreground">
-                            m@example.com
-                          </p>
-                        </div>
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem asChild>
-                        <Link href="/profile">Profile</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem>Log out</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-               ) : (
-                <Link href="/login" className="text-foreground/80 hover:text-foreground transition-colors">Login</Link>
+               {!loading && (
+                 <>
+                  {user ? (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                            <User className="h-5 w-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-56" align="end" forceMount>
+                          <DropdownMenuLabel className="font-normal">
+                            <div className="flex flex-col space-y-1">
+                              <p className="text-sm font-medium leading-none">{user.name}</p>
+                              <p className="text-xs leading-none text-muted-foreground">
+                                {user.email}
+                              </p>
+                            </div>
+                          </DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem asChild>
+                            <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
+                          </DropdownMenuItem>
+                           {user.role === 'seller' && (
+                            <DropdownMenuItem asChild>
+                               <Link href="/creator-studio"><PlusCircle className="mr-2 h-4 w-4" />Add Product</Link>
+                            </DropdownMenuItem>
+                           )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={handleLogout}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Log out
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                  ) : (
+                    <Link href="/login" className="text-foreground/80 hover:text-foreground transition-colors">Login</Link>
+                  )}
+                 </>
                )}
             </div>
           </div>

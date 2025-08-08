@@ -12,14 +12,37 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
+import { signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 export function LoginForm() {
   const router = useRouter();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Mock login logic
-    router.push("/");
+    setLoading(true);
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: "Logged in successfully!" });
+      router.push("/");
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Uh oh! Something went wrong.",
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -36,6 +59,7 @@ export function LoginForm() {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
+              name="email"
               type="email"
               placeholder="m@example.com"
               required
@@ -48,10 +72,10 @@ export function LoginForm() {
                 Forgot your password?
               </Link>
             </div>
-            <Input id="password" type="password" required />
+            <Input id="password" name="password" type="password" required />
           </div>
-          <Button type="submit" className="w-full font-headline">
-            Login
+          <Button type="submit" className="w-full font-headline" disabled={loading}>
+            {loading ? 'Logging in...' : 'Login'}
           </Button>
         </form>
         <div className="mt-4 text-center text-sm">

@@ -11,8 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { mockProducts } from "@/lib/mock-data";
 import type { Product } from "@/types";
+import { collection, getDocs, query, where, or, and } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 interface SearchDialogProps {
   open: boolean;
@@ -22,19 +23,44 @@ interface SearchDialogProps {
 export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setResults([]);
-      return;
-    }
+    const fetchResults = async () => {
+      if (searchQuery.trim() === "") {
+        setResults([]);
+        return;
+      }
+      setLoading(true);
+      try {
+        const q = query(collection(db, 'products'), 
+          or(
+            where('name', '>=', searchQuery),
+            where('name', '<=', searchQuery + '\uf8ff'),
+            // Note: Firestore does not support full text search on multiple fields easily.
+            // This is a simplified search. For a more robust search, you would use a 
+            // dedicated search service like Algolia or Elasticsearch.
+          )
+        );
+        const querySnapshot = await getDocs(q);
+        const products = querySnapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() } as Product))
+          .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.description.toLowerCase().includes(searchQuery.toLowerCase()));
 
-    const filtered = mockProducts.filter(
-      (product) =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    setResults(filtered);
+        setResults(products);
+      } catch (error) {
+        console.error("Error searching products:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    const debounceTimer = setTimeout(() => {
+        fetchResults();
+    }, 300);
+
+    return () => clearTimeout(debounceTimer);
+
   }, [searchQuery]);
 
   return (
@@ -52,7 +78,9 @@ export function SearchDialog({ open, onOpenChange }: SearchDialogProps) {
           />
         </div>
         <ScrollArea className="h-[60vh] mt-4">
-          {results.length > 0 ? (
+          {loading ? (
+            <div className="text-center p-8 text-muted-foreground">Searching...</div>
+          ) : results.length > 0 ? (
             <div className="grid grid-cols-1 gap-4 p-1">
               {results.map((product) => (
                 <Link href="/" key={product.id} onClick={() => onOpenChange(false)}>
