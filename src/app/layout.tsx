@@ -3,6 +3,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Providers } from './providers';
 import { AppHeader } from '@/components/shared/AppHeader';
+import { BottomNav } from '@/components/shared/BottomNav';
 
 export const metadata: Metadata = {
   title: 'ConnectBuy',
@@ -25,7 +26,8 @@ export default function RootLayout({
         <Providers>
           <div className="relative flex flex-col min-h-screen">
             <AppHeader />
-            <main className="flex-grow">{children}</main>
+            <main className="flex-grow pb-16 md:pb-0">{children}</main>
+            <BottomNav />
           </div>
         </Providers>
       </body>
