@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/context/AuthContext";
@@ -25,6 +26,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import Link from "next/link";
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -60,8 +62,10 @@ export default function ProfilePage() {
       }
     };
 
-    fetchProducts();
-  }, [user, toast]);
+    if (user) {
+      fetchProducts();
+    }
+  }, [user]);
 
   const handleDeleteProduct = async (productId: string) => {
     try {
@@ -108,9 +112,11 @@ export default function ProfilePage() {
             <div className="flex-1">
               <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold font-headline">{profileTitle}</h1>
-                <Button variant="outline" size="sm">
-                  <Settings className="mr-2 h-4 w-4" />
-                  Edit Profile
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/profile/edit">
+                    <Settings className="mr-2 h-4 w-4" />
+                    Edit Profile
+                  </Link>
                 </Button>
               </div>
               <p className="text-muted-foreground mt-1">{user.name}</p>
@@ -206,3 +212,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
