@@ -26,7 +26,7 @@ export default function RootLayout({
         <Providers>
           <div className="relative flex flex-col min-h-screen">
             <AppHeader />
-            <main className="flex-grow pb-16">{children}</main>
+            <main className="flex-grow pb-24">{children}</main>
             <BottomNav />
           </div>
         </Providers>

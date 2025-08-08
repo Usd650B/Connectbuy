@@ -3,45 +3,30 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Home, Search, ShoppingCart, User, PlusCircle, LogOut } from 'lucide-react';
+import { Home, Search, ShoppingCart, PlusCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { SearchDialog } from './SearchDialog';
 import { CartSheet } from '../cart/CartSheet';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Button } from '../ui/button';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 
 export function BottomNav() {
   const pathname = usePathname();
   const router = useRouter();
   const { itemCount } = useCart();
-  const { user, loading } = useAuth();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isCartOpen, setCartOpen] = useState(false);
-
-  const handleLogout = async () => {
-    await signOut(auth);
-    router.push("/");
-  };
   
   const navItems = [
     { href: '/', icon: Home, label: 'Home', id: 'home' },
     { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
-    ...(user?.role === 'seller' ? [{ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' }] : []),
+    { href: '/creator-studio', icon: PlusCircle, label: 'Add', isAction: true, id: 'add' },
     { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
-    { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
   ];
 
   const handleNavClick = (e: React.MouseEvent, href: string, id?: string) => {
@@ -52,84 +37,62 @@ export function BottomNav() {
       e.preventDefault();
       setCartOpen(true);
     } else if (id === 'add') {
-       // Regular navigation for the add button is sufficient
+      e.preventDefault();
+      if (user?.role === 'seller') {
+        router.push(href);
+      } else {
+        toast({
+          title: "Sellers only",
+          description: "You must be a seller to add products.",
+          duration: 3000,
+        })
+      }
     }
   };
 
   return (
     <>
       <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
-        <div className={`grid h-full max-w-lg mx-auto font-medium grid-cols-${navItems.length}`}>
-          {navItems.map(({ href, icon: Icon, label, isAction, id }) => {
+        <div className="grid h-full max-w-lg grid-cols-4 mx-auto font-medium">
+          {navItems.map(({ href, icon: Icon, label, isAction, id }, index) => {
             const isActive = pathname === href && !isAction;
             
             const linkContent = (
-               <div className={cn(
-                  "inline-flex flex-col items-center justify-center px-5 group h-full w-full",
-                   isActive ? "text-primary" : "text-muted-foreground",
-                   isAction && "text-muted-foreground"
+              <div
+                className={cn(
+                  "inline-flex flex-col items-center justify-center px-5 w-full h-full group",
+                  isActive ? "text-primary" : "text-muted-foreground",
+                  id === 'add' && "text-foreground", // Special color for add button
+                )}
+              >
+                <div className={cn(
+                  "relative p-3 rounded-full transition-colors",
+                  id === 'add' && "-mt-6 bg-primary text-primary-foreground shadow-lg",
+                  isActive && id !== 'add' && "bg-primary/10",
                 )}>
-                  <div className="relative">
-                    <Icon className="w-5 h-5 mb-1" />
-                    {label === 'Cart' && itemCount > 0 && (
-                        <Badge variant="default" className="absolute -top-2 -right-3 h-5 w-5 justify-center rounded-full p-0 text-xs bg-primary text-primary-foreground">{itemCount}</Badge>
-                    )}
-                  </div>
-                  <span className={cn("text-sm", isActive ? "text-primary" : "group-hover:text-foreground")}>{label}</span>
+                  <Icon className="w-6 h-6" />
+                  {label === 'Cart' && itemCount > 0 && (
+                      <Badge variant="default" className="absolute -top-1 -right-2 h-5 w-5 justify-center rounded-full p-0 text-xs bg-primary text-primary-foreground">{itemCount}</Badge>
+                  )}
+                </div>
+                <span className={cn(
+                  "text-xs",
+                  isActive ? "text-primary" : "group-hover:text-foreground",
+                  id === 'add' && "sr-only" // Hide label for add button
+                )}>
+                  {label}
+                </span>
               </div>
             );
-
-            if (id === 'profile') {
-               if(loading) return <div key="profile-loader" className="flex items-center justify-center"><User className="w-5 h-5 mb-1 text-muted-foreground" /></div>;
-               if(!user) return (
-                 <Link key="profile-login" href="/login" className="flex-1">
-                    {linkContent}
-                 </Link>
-               );
-               
-               return (
-                <DropdownMenu key="profile-dropdown">
-                  <DropdownMenuTrigger asChild>
-                    <button className="flex-1 h-full">
-                       {linkContent}
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 mb-2" align="end" side="top" forceMount>
-                    <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user.name}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user.email}
-                        </p>
-                      </div>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
-                    </DropdownMenuItem>
-                     {user.role === 'seller' && (
-                      <DropdownMenuItem asChild>
-                         <Link href="/creator-studio"><PlusCircle className="mr-2 h-4 w-4" />Add Product</Link>
-                      </DropdownMenuItem>
-                     )}
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogout}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Log out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-               )
-            }
             
             return (
               <Link
                 key={id}
                 href={href}
                 onClick={(e:any) => handleNavClick(e, href, id)}
-                className="flex-1"
-                >
-                  {linkContent}
+                className="flex items-center justify-center"
+              >
+                {linkContent}
               </Link>
             );
           })}
