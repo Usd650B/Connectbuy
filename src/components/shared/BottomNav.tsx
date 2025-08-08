@@ -37,37 +37,37 @@ export function BottomNav() {
   };
 
   const getNavItems = () => {
-    const items = [
+    const baseItems = [
       { href: '/', icon: Home, label: 'Home', id: 'home' },
       { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
     ];
 
-    if (user && user.role === 'seller') {
-      items.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' });
-    }
+    const sellerItems = user && user.role === 'seller' 
+      ? [{ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' }] 
+      : [];
 
-    items.push(
+    const finalItems = [
+      ...sellerItems,
       { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
       { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
-    );
-
-    return items;
+    ];
+    
+    return [...baseItems.slice(0, 2), ...sellerItems, ...baseItems.slice(2), ...finalItems];
   };
+  
+  const navItems = getNavItems().filter(Boolean);
 
-  const navItems = getNavItems();
 
   const handleNavClick = (e: React.MouseEvent, href: string, id?: string) => {
     if (id === 'search') {
       e.preventDefault();
       setSearchOpen(true);
-    }
-    if (id === 'cart') {
+    } else if (id === 'cart') {
       e.preventDefault();
       setCartOpen(true);
-    }
-    if (id === 'add') {
-        e.preventDefault();
-        router.push(href);
+    } else if (id === 'add') {
+      e.preventDefault();
+      router.push(href);
     }
   };
 
