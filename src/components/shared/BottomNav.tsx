@@ -2,39 +2,58 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Home, Search, ShoppingCart, User, PlusCircle } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Home, Search, ShoppingCart, User, PlusCircle, LogOut } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { SearchDialog } from './SearchDialog';
 import { CartSheet } from '../cart/CartSheet';
 import { Badge } from '../ui/badge';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/AuthContext';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from '../ui/button';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
 
 export function BottomNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const { itemCount } = useCart();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isCartOpen, setCartOpen] = useState(false);
 
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push("/");
+  };
+
+
   const baseNavItems = [
     { href: '/', icon: Home, label: 'Home' },
-    { href: '/search', icon: Search, label: 'Search', isAction: true },
+    { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
   ];
   
   const navItems = [...baseNavItems];
   if (user && user.role === 'seller') {
-      navItems.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add' });
+      navItems.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' });
   }
 
   navItems.push(
-    { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true },
-    { href: '/profile', icon: User, label: 'Profile' }
+    { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
+    { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
   );
 
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+  const handleNavClick = (e: React.MouseEvent, href: string) => {
     if (href === '/search') {
       e.preventDefault();
       setSearchOpen(true);
@@ -47,32 +66,78 @@ export function BottomNav() {
 
   return (
     <>
-      <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
+      <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background border-t border-border">
         <div className={`grid h-full max-w-lg mx-auto font-medium grid-cols-${navItems.length}`}>
-          {navItems.map(({ href, icon: Icon, label, isAction }) => {
+          {navItems.map(({ href, icon: Icon, label, isAction, id }) => {
             const isActive = pathname === href && !isAction;
             
-            const linkProps: any = {
-              href: href,
-              onClick: (e:any) => isAction && handleNavClick(e, href)
-            };
-            
-            return (
-              <Link
-                key={label}
-                {...linkProps}
-                className={cn(
-                  "inline-flex flex-col items-center justify-center px-5 hover:bg-muted group h-full",
-                  isActive && "text-primary"
-                )}
-                >
+            const linkContent = (
+               <div className={cn(
+                  "inline-flex flex-col items-center justify-center px-5 group h-full w-full",
+                   isActive ? "text-primary" : "text-muted-foreground",
+                   isAction && "text-muted-foreground"
+                )}>
                   <div className="relative">
                     <Icon className="w-5 h-5 mb-1" />
                     {label === 'Cart' && itemCount > 0 && (
                         <Badge variant="default" className="absolute -top-2 -right-3 h-5 w-5 justify-center rounded-full p-0 text-xs bg-primary text-primary-foreground">{itemCount}</Badge>
                     )}
                   </div>
-                  <span className={cn("text-sm", isActive ? "text-primary" : "text-muted-foreground")}>{label}</span>
+                  <span className={cn("text-sm", isActive ? "text-primary" : "group-hover:text-foreground")}>{label}</span>
+              </div>
+            );
+
+            if (id === 'profile') {
+               if(loading) return <div key="profile-loader" className="flex items-center justify-center"><User className="w-5 h-5 mb-1 text-muted-foreground" /></div>;
+               if(!user) return (
+                 <Link key="profile-login" href="/login" className="flex-1">
+                    {linkContent}
+                 </Link>
+               );
+               
+               return (
+                <DropdownMenu key="profile-dropdown">
+                  <DropdownMenuTrigger asChild>
+                    <button className="flex-1 h-full">
+                       {linkContent}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-56 mb-2" align="end" side="top" forceMount>
+                    <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user.name}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user.email}
+                        </p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile"><User className="mr-2 h-4 w-4" />Profile</Link>
+                    </DropdownMenuItem>
+                     {user.role === 'seller' && (
+                      <DropdownMenuItem asChild>
+                         <Link href="/creator-studio"><PlusCircle className="mr-2 h-4 w-4" />Add Product</Link>
+                      </DropdownMenuItem>
+                     )}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+               )
+            }
+            
+            return (
+              <Link
+                key={label}
+                href={href}
+                onClick={(e:any) => isAction && handleNavClick(e, href)}
+                className="flex-1"
+                >
+                  {linkContent}
               </Link>
             );
           })}
