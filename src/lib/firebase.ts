@@ -13,6 +13,15 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Validate that all required environment variables are present
+const requiredKeys: (keyof typeof firebaseConfig)[] = ['apiKey', 'authDomain', 'projectId', 'storageBucket'];
+const missingKeys = requiredKeys.filter(key => !firebaseConfig[key]);
+
+if (missingKeys.length > 0) {
+  throw new Error(`Missing Firebase config keys in .env.local: ${missingKeys.join(', ')}. Please make sure all required environment variables are set.`);
+}
+
+
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
