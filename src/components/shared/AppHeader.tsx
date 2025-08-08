@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { Search, ShoppingCart, Feather, User } from "lucide-react";
+import { usePathname, useRouter } from "next/navigation";
+import { Search, ShoppingCart, Feather, User, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import { CartSheet } from "@/components/cart/CartSheet";
@@ -16,25 +17,43 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 export function AppHeader() {
   const { itemCount } = useCart();
   const [isCartOpen, setCartOpen] = useState(false);
   const [isSearchOpen, setSearchOpen] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Mock user state
   const user = { name: "Jane Doe" };
+
+  const showBackButton = pathname !== "/";
 
   return (
     <>
       <header className="sticky top-0 z-40 w-full border-b bg-background/80 backdrop-blur-sm">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
-          <Link href="/" className="flex items-center gap-2">
-            <Feather className="h-7 w-7 text-primary" />
-            <span className="text-xl font-bold font-headline text-primary">
-              ConnectBuy
-            </span>
-          </Link>
+          <div className="flex items-center gap-2">
+            {showBackButton ? (
+              <Button variant="ghost" size="icon" onClick={() => router.back()} aria-label="Go back">
+                <ArrowLeft className="h-6 w-6" />
+              </Button>
+            ) : (
+              <Link href="/" className="flex items-center gap-2">
+                <Feather className="h-7 w-7 text-primary" />
+                <span className="text-xl font-bold font-headline text-primary">
+                  ConnectBuy
+                </span>
+              </Link>
+            )}
+          </div>
+          <div className="hidden md:flex items-center gap-4 text-sm font-medium font-headline">
+             <Link href="/" className={cn("text-foreground/80 hover:text-foreground transition-colors", pathname === '/' && "text-primary font-bold")}>Home</Link>
+             <Link href="/creator-studio" className={cn("text-foreground/80 hover:text-foreground transition-colors", pathname === '/creator-studio' && "text-primary font-bold")}>Creator Studio</Link>
+          </div>
+
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -64,7 +83,6 @@ export function AppHeader() {
             </Button>
             
             <div className="hidden md:flex items-center gap-4 text-sm font-medium font-headline">
-               <Link href="/creator-studio" className="text-foreground/80 hover:text-foreground transition-colors">Creator Studio</Link>
                {user ? (
                  <DropdownMenu>
                     <DropdownMenuTrigger asChild>
