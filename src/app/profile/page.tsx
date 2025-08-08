@@ -65,7 +65,7 @@ export default function ProfilePage() {
     if (user) {
       fetchProducts();
     }
-  }, [user]);
+  }, [user, toast]);
 
   const handleDeleteProduct = async (productId: string) => {
     try {

@@ -19,26 +19,26 @@ export default function CreatorStudioPage() {
       router.push('/login');
     }
   }, [user, loading, router]);
-  
+
   if (loading) {
     return <div className="container mx-auto max-w-4xl py-8 px-4">Loading...</div>;
   }
-  
-  if (user && user.role !== 'seller') {
-     return (
-        <div className="container mx-auto max-w-4xl py-8 px-4">
-          <Alert variant="destructive">
-            <Terminal className="h-4 w-4" />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>
-              You must be a seller to access this page. 
-              <Button variant="link" asChild>
-                <Link href="/signup">Create a seller account</Link>
-              </Button>
-            </AlertDescription>
-          </Alert>
-        </div>
-     )
+
+  if (!user || user.role !== 'seller') {
+    return (
+      <div className="container mx-auto max-w-4xl py-8 px-4">
+        <Alert variant="destructive">
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Access Denied</AlertTitle>
+          <AlertDescription>
+            You must be a seller to access this page.
+            <Button variant="link" asChild>
+              <Link href="/signup">Create a seller account</Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
