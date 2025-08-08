@@ -18,10 +18,12 @@ export function BottomNav() {
   const [isSearchOpen, setSearchOpen] = useState(false);
   const [isCartOpen, setCartOpen] = useState(false);
 
-  const navItems = [
+  const baseNavItems = [
     { href: '/', icon: Home, label: 'Home' },
     { href: '/search', icon: Search, label: 'Search', isAction: true },
   ];
+
+  const navItems = [...baseNavItems];
 
   if (user && user.role === 'seller') {
     navItems.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add' });
@@ -53,6 +55,8 @@ export function BottomNav() {
             const linkProps: any = {};
             if (!isAction) {
                 linkProps.href = href;
+            } else {
+                linkProps.href = '#';
             }
             
             return (
@@ -67,7 +71,7 @@ export function BottomNav() {
                 >
                   <div className="relative">
                     <Icon className="w-5 h-5 mb-1" />
-                    {href === '/cart' && itemCount > 0 && (
+                    {label === 'Cart' && itemCount > 0 && (
                         <Badge variant="default" className="absolute -top-2 -right-3 h-5 w-5 justify-center rounded-full p-0 text-xs bg-primary text-primary-foreground">{itemCount}</Badge>
                     )}
                   </div>
