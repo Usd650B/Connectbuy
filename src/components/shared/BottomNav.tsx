@@ -35,28 +35,14 @@ export function BottomNav() {
     await signOut(auth);
     router.push("/");
   };
-
-  const getNavItems = () => {
-    const baseItems = [
-      { href: '/', icon: Home, label: 'Home', id: 'home' },
-      { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
-    ];
-
-    const sellerItems = user && user.role === 'seller' 
-      ? [{ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' }] 
-      : [];
-
-    const finalItems = [
-      ...sellerItems,
-      { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
-      { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
-    ];
-    
-    return [...baseItems.slice(0, 2), ...sellerItems, ...baseItems.slice(2), ...finalItems];
-  };
   
-  const navItems = getNavItems().filter(Boolean);
-
+  const navItems = [
+    { href: '/', icon: Home, label: 'Home', id: 'home' },
+    { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
+    ...(user?.role === 'seller' ? [{ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' }] : []),
+    { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
+    { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
+  ];
 
   const handleNavClick = (e: React.MouseEvent, href: string, id?: string) => {
     if (id === 'search') {
@@ -66,8 +52,7 @@ export function BottomNav() {
       e.preventDefault();
       setCartOpen(true);
     } else if (id === 'add') {
-      e.preventDefault();
-      router.push(href);
+       // Regular navigation for the add button is sufficient
     }
   };
 

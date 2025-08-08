@@ -31,9 +31,9 @@ export default function CreatorStudioPage() {
           <Terminal className="h-4 w-4" />
           <AlertTitle>Access Denied</AlertTitle>
           <AlertDescription>
-            You must be a seller to access this page.
+            You must be logged in as a seller to access this page.
             <Button variant="link" asChild>
-              <Link href="/signup">Create a seller account</Link>
+              <Link href="/login">Login</Link>
             </Button>
           </AlertDescription>
         </Alert>
