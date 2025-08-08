@@ -17,6 +17,8 @@ import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Terminal } from "lucide-react";
 
 const formSchema = z.object({
   // Shipping
@@ -35,6 +37,7 @@ const formSchema = z.object({
 export function CheckoutForm() {
   const router = useRouter();
   const { cart, cartTotal, clearCart } = useCart();
+  const isCartEmpty = cart.length === 0;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -57,31 +60,37 @@ export function CheckoutForm() {
     router.push("/order-success");
   }
 
-  if (cart.length === 0) {
-    return <div className="text-center py-12">Your cart is empty. Please add items to checkout.</div>
-  }
-
   return (
     <div className="grid md:grid-cols-2 gap-12">
       <div className="md:col-span-1">
         <h3 className="text-xl font-headline font-bold mb-4">Order Summary</h3>
-        <div className="space-y-4">
-          {cart.map(item => (
-            <div key={item.id} className="flex items-center gap-4">
-              <Image src={item.imageUrl} alt={item.name} width={60} height={80} className="rounded-md object-cover" data-ai-hint="product photo" />
-              <div className="flex-1">
-                <p className="font-semibold">{item.name}</p>
-                <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+        {isCartEmpty ? (
+           <Alert>
+            <Terminal className="h-4 w-4" />
+            <AlertTitle>Your Cart is Empty</AlertTitle>
+            <AlertDescription>
+              Please add items to your cart before proceeding to checkout.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <div className="space-y-4">
+            {cart.map(item => (
+              <div key={item.id} className="flex items-center gap-4">
+                <Image src={item.imageUrl} alt={item.name} width={60} height={80} className="rounded-md object-cover" data-ai-hint="product photo" />
+                <div className="flex-1">
+                  <p className="font-semibold">{item.name}</p>
+                  <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                </div>
+                <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
               </div>
-              <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+            ))}
+            <Separator />
+            <div className="flex justify-between font-bold text-lg">
+              <span>Total</span>
+              <span>${cartTotal.toFixed(2)}</span>
             </div>
-          ))}
-          <Separator />
-          <div className="flex justify-between font-bold text-lg">
-            <span>Total</span>
-            <span>${cartTotal.toFixed(2)}</span>
           </div>
-        </div>
+        )}
       </div>
       <div className="md:col-span-1">
         <Form {...form}>
@@ -126,7 +135,9 @@ export function CheckoutForm() {
               </div>
             </div>
 
-            <Button type="submit" size="lg" className="w-full font-headline">Pay ${cartTotal.toFixed(2)}</Button>
+            <Button type="submit" size="lg" className="w-full font-headline" disabled={isCartEmpty}>
+              {isCartEmpty ? "Your cart is empty" : `Pay $${cartTotal.toFixed(2)}`}
+            </Button>
           </form>
         </Form>
       </div>
