@@ -36,31 +36,38 @@ export function BottomNav() {
     router.push("/");
   };
 
+  const getNavItems = () => {
+    const items = [
+      { href: '/', icon: Home, label: 'Home', id: 'home' },
+      { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
+    ];
 
-  const baseNavItems = [
-    { href: '/', icon: Home, label: 'Home' },
-    { href: '/search', icon: Search, label: 'Search', isAction: true, id: 'search' },
-  ];
-  
-  const navItems = [...baseNavItems];
-  if (user && user.role === 'seller') {
-      navItems.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' });
-  }
+    if (user && user.role === 'seller') {
+      items.push({ href: '/creator-studio', icon: PlusCircle, label: 'Add', id: 'add' });
+    }
 
-  navItems.push(
-    { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
-    { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
-  );
+    items.push(
+      { href: '/cart', icon: ShoppingCart, label: 'Cart', isAction: true, id: 'cart' },
+      { href: '/profile', icon: User, label: 'Profile', id: 'profile' }
+    );
 
+    return items;
+  };
 
-  const handleNavClick = (e: React.MouseEvent, href: string) => {
-    if (href === '/search') {
+  const navItems = getNavItems();
+
+  const handleNavClick = (e: React.MouseEvent, href: string, id?: string) => {
+    if (id === 'search') {
       e.preventDefault();
       setSearchOpen(true);
     }
-    if (href === '/cart') {
+    if (id === 'cart') {
       e.preventDefault();
       setCartOpen(true);
+    }
+    if (id === 'add') {
+        e.preventDefault();
+        router.push(href);
     }
   };
 
@@ -132,9 +139,9 @@ export function BottomNav() {
             
             return (
               <Link
-                key={label}
+                key={id}
                 href={href}
-                onClick={(e:any) => isAction && handleNavClick(e, href)}
+                onClick={(e:any) => handleNavClick(e, href, id)}
                 className="flex-1"
                 >
                   {linkContent}
