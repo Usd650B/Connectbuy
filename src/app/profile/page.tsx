@@ -53,7 +53,12 @@ export default function ProfilePage() {
           const products = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
           setUserProducts(products);
         }
-        // TODO: Fetch liked products
+        if (user.likedProducts && user.likedProducts.length > 0) {
+          const likedProductsQuery = query(collection(db, "products"), where("id", "in", user.likedProducts));
+          const likedSnapshot = await getDocs(likedProductsQuery);
+          const liked = likedSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
+          setLikedProducts(liked);
+        }
       } catch (error) {
         console.error("Error fetching user products:", error);
         toast({variant: "destructive", title: "Error", description: "Could not fetch your products."})
@@ -153,16 +158,22 @@ export default function ProfilePage() {
                <TabsContent value="creations">
                 {productsLoading ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 p-1">
-                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-square" />)}
+                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-[4/5]" />)}
                   </div>
                 ) : userProducts.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 p-1">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-2">
                     {userProducts.map(product => (
-                      <div key={product.id} className="relative aspect-square group">
-                        <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="fashion product" />
+                      <div key={product.id} className="relative group rounded-lg overflow-hidden">
+                        <div className="aspect-square relative">
+                          <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="cover" data-ai-hint="fashion product" />
+                        </div>
+                        <div className="p-2 bg-card">
+                            <p className="font-bold truncate">{product.name}</p>
+                            <p className="text-sm text-primary">${product.price.toFixed(2)}</p>
+                        </div>
                          <AlertDialog>
                           <AlertDialogTrigger asChild>
-                             <Button variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <Button variant="destructive" size="icon" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
                                <Trash2 className="h-4 w-4" />
                              </Button>
                           </AlertDialogTrigger>
@@ -195,10 +206,16 @@ export default function ProfilePage() {
                     {[...Array(4)].map((_, i) => <Skeleton key={i} className="aspect-square" />)}
                   </div>
               ) : likedProducts.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-1 p-1">
+                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 p-2">
                     {likedProducts.map(product => (
-                      <div key={product.id} className="relative aspect-square">
-                        <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="cover" className="rounded-md" data-ai-hint="fashion product" />
+                       <div key={product.id} className="relative group rounded-lg overflow-hidden">
+                        <div className="aspect-square relative">
+                           <Image src={product.imageUrl} alt={product.name} layout="fill" objectFit="cover" data-ai-hint="fashion product" />
+                        </div>
+                         <div className="p-2 bg-card">
+                            <p className="font-bold truncate">{product.name}</p>
+                            <p className="text-sm text-primary">${product.price.toFixed(2)}</p>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -212,5 +229,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

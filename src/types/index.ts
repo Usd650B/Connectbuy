@@ -1,3 +1,4 @@
+
 import type { Timestamp } from "firebase/firestore";
 
 export type UserRole = "buyer" | "seller";
@@ -14,6 +15,7 @@ export type UserProfile = {
     followers: number;
     likes: number;
   };
+  likedProducts?: string[];
 };
 
 export type Product = {
@@ -28,6 +30,8 @@ export type Product = {
   description: string;
   price: number;
   createdAt: Timestamp;
+  likes?: string[];
+  likeCount?: number;
 };
 
 export type CartItem = Product & {
