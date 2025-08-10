@@ -1,71 +1,41 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { useEffect, useState } from "react";
+import {
+  PaymentElement,
+  AddressElement,
+  useStripe,
+  useElements,
+  Elements,
+} from "@stripe/react-stripe-js";
+import { loadStripe, StripeElementsOptions } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import { useCart } from "@/context/CartContext";
 import { Separator } from "@/components/ui/separator";
 import Image from "next/image";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Terminal } from "lucide-react";
+import { Terminal, Loader2 } from "lucide-react";
+import { createPaymentIntent } from "@/app/checkout/actions";
+import { useToast } from "@/hooks/use-toast";
 
-const formSchema = z.object({
-  // Shipping
-  fullName: z.string().min(2, { message: "Full name is required." }),
-  address: z.string().min(5, { message: "A valid address is required." }),
-  city: z.string().min(2, { message: "City is required." }),
-  zipCode: z.string().regex(/^\d{5}$/, { message: "Enter a valid 5-digit zip code." }),
+// Make sure to call `loadStripe` outside of a component’s render to avoid
+// recreating the `Stripe` object on every render.
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
-  // Payment
-  cardName: z.string().min(2, { message: "Name on card is required." }),
-  cardNumber: z.string().regex(/^\d{16}$/, { message: "Enter a valid 16-digit card number." }),
-  cardExpiry: z.string().regex(/^(0[1-9]|1[0-2])\/\d{2}$/, { message: "Use MM/YY format." }),
-  cardCvc: z.string().regex(/^\d{3,4}$/, { message: "Enter a valid CVC." }),
-});
-
-export function CheckoutForm() {
+function CheckoutFormContent() {
   const router = useRouter();
-  const { cart, cartTotal, clearCart } = useCart();
-  const isCartEmpty = cart.length === 0;
-
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      fullName: "",
-      address: "",
-      city: "",
-      zipCode: "",
-      cardName: "",
-      cardNumber: "",
-      cardExpiry: "",
-      cardCvc: "",
-    },
-  });
-
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Mock payment processing
-    console.log("Processing payment for:", values);
-    clearCart();
-    router.push("/order-success");
-  }
+  const { cart, cartTotal, clearCart, itemCount } = useCart();
+  const isCartEmpty = itemCount === 0;
 
   return (
     <div className="grid md:grid-cols-2 gap-12">
       <div className="md:col-span-1">
         <h3 className="text-xl font-headline font-bold mb-4">Order Summary</h3>
         {isCartEmpty ? (
-           <Alert>
+          <Alert>
             <Terminal className="h-4 w-4" />
             <AlertTitle>Your Cart is Empty</AlertTitle>
             <AlertDescription>
@@ -74,14 +44,25 @@ export function CheckoutForm() {
           </Alert>
         ) : (
           <div className="space-y-4">
-            {cart.map(item => (
+            {cart.map((item) => (
               <div key={item.id} className="flex items-center gap-4">
-                <Image src={item.imageUrl} alt={item.name} width={60} height={80} className="rounded-md object-cover" data-ai-hint="product photo" />
+                <Image
+                  src={item.imageUrl}
+                  alt={item.name}
+                  width={60}
+                  height={80}
+                  className="rounded-md object-cover"
+                  data-ai-hint="product photo"
+                />
                 <div className="flex-1">
                   <p className="font-semibold">{item.name}</p>
-                  <p className="text-sm text-muted-foreground">Qty: {item.quantity}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Qty: {item.quantity}
+                  </p>
                 </div>
-                <p className="font-semibold">${(item.price * item.quantity).toFixed(2)}</p>
+                <p className="font-semibold">
+                  ${(item.price * item.quantity).toFixed(2)}
+                </p>
               </div>
             ))}
             <Separator />
@@ -93,54 +74,128 @@ export function CheckoutForm() {
         )}
       </div>
       <div className="md:col-span-1">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <div>
-              <h3 className="text-xl font-headline font-bold mb-4">Shipping Details</h3>
-              <div className="space-y-4">
-                <FormField control={form.control} name="fullName" render={({ field }) => (
-                  <FormItem><FormLabel>Full Name</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="address" render={({ field }) => (
-                  <FormItem><FormLabel>Address</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="city" render={({ field }) => (
-                      <FormItem><FormLabel>City</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="zipCode" render={({ field }) => (
-                      <FormItem><FormLabel>Zip Code</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                </div>
-              </div>
+        {isCartEmpty ? (
+            <div className="h-full flex items-center justify-center text-muted-foreground">
+                Your cart is empty.
             </div>
-
-            <div>
-              <h3 className="text-xl font-headline font-bold mb-4">Payment Information</h3>
-              <div className="space-y-4">
-                <FormField control={form.control} name="cardName" render={({ field }) => (
-                    <FormItem><FormLabel>Name on Card</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <FormField control={form.control} name="cardNumber" render={({ field }) => (
-                    <FormItem><FormLabel>Card Number</FormLabel><FormControl><Input placeholder="XXXXXXXXXXXXXXXX" {...field} /></FormControl><FormMessage /></FormItem>
-                )} />
-                <div className="grid grid-cols-2 gap-4">
-                    <FormField control={form.control} name="cardExpiry" render={({ field }) => (
-                      <FormItem><FormLabel>Expiry (MM/YY)</FormLabel><FormControl><Input placeholder="MM/YY" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                    <FormField control={form.control} name="cardCvc" render={({ field }) => (
-                      <FormItem><FormLabel>CVC</FormLabel><FormControl><Input placeholder="123" {...field} /></FormControl><FormMessage /></FormItem>
-                    )} />
-                </div>
-              </div>
-            </div>
-
-            <Button type="submit" size="lg" className="w-full font-headline" disabled={isCartEmpty}>
-              {isCartEmpty ? "Your cart is empty" : `Pay $${cartTotal.toFixed(2)}`}
-            </Button>
-          </form>
-        </Form>
+        ) : (
+            <PaymentForm />
+        )}
       </div>
     </div>
   );
 }
+
+function PaymentForm() {
+    const { cartTotal, clearCart } = useCart();
+    const [clientSecret, setClientSecret] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (cartTotal > 0) {
+            createPaymentIntent(cartTotal)
+                .then(data => {
+                    if (data.clientSecret) {
+                        setClientSecret(data.clientSecret);
+                    } else {
+                         toast({variant: "destructive", title: "Error", description: data.error});
+                    }
+                })
+                .finally(() => setLoading(false));
+        }
+    }, [cartTotal, toast]);
+
+    if(loading || !clientSecret) {
+        return (
+            <div className="flex flex-col items-center justify-center space-y-4 h-full">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Loading payment gateway...</p>
+            </div>
+        )
+    }
+
+    const options: StripeElementsOptions = {
+        clientSecret,
+        appearance: {
+          theme: 'stripe',
+        },
+    };
+
+    return (
+        <Elements options={options} stripe={stripePromise}>
+          <StripeCheckoutForm />
+        </Elements>
+    );
+}
+
+function StripeCheckoutForm() {
+  const stripe = useStripe();
+  const elements = useElements();
+  const router = useRouter();
+  const { clearCart, cartTotal } = useCart();
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      // Stripe.js has not yet loaded.
+      return;
+    }
+
+    setIsProcessing(true);
+
+    const { error } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/order-success`,
+      },
+      redirect: "if_required",
+    });
+
+    if (error) {
+      if (error.type === "card_error" || error.type === "validation_error") {
+        setErrorMessage(error.message || "An unexpected error occurred.");
+      } else {
+        setErrorMessage("An unexpected error occurred.");
+      }
+      setIsProcessing(false);
+    } else {
+      // Payment succeeded
+      toast({title: "Payment Successful!", description: "Your order has been placed."});
+      clearCart();
+      router.push("/order-success");
+    }
+  };
+
+  return (
+    <form id="payment-form" onSubmit={handleSubmit} className="space-y-6">
+        <div>
+            <h3 className="text-xl font-headline font-bold mb-4">Shipping & Payment</h3>
+            <AddressElement id="address-element" options={{mode: 'shipping'}} />
+        </div>
+        <div>
+             <PaymentElement id="payment-element" />
+        </div>
+      
+        {errorMessage && <Alert variant="destructive"><AlertDescription>{errorMessage}</AlertDescription></Alert>}
+
+        <Button type="submit" size="lg" className="w-full font-headline" disabled={isProcessing || !stripe || !elements}>
+            {isProcessing ? (
+                <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                </>
+            ): (
+                `Pay $${cartTotal.toFixed(2)}`
+            )}
+        </Button>
+    </form>
+  )
+}
+
+export { CheckoutFormContent as CheckoutForm };
+
