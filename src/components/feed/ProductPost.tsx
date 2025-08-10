@@ -56,8 +56,8 @@ export function ProductPost({ product }: ProductPostProps) {
     const productRef = doc(db, "products", product.id);
     const unsub = onSnapshot(productRef, (doc) => {
         const data = doc.data();
-        setLikeCount(data()?.likeCount || 0);
-        setLiked(data()?.likes?.includes(user?.uid || '') || false);
+        setLikeCount(data?.likeCount || 0);
+        setLiked(data?.likes?.includes(user?.uid || '') || false);
     });
     return () => unsub();
   }, [product.id, user?.uid]);
