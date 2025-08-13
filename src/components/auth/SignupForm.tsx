@@ -18,7 +18,7 @@ export function SignupForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [role, setRole] = useState<UserRole>("buyer");
+  const [role, setRole] = useState<UserRole>('buyer');
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -89,9 +89,13 @@ export function SignupForm() {
           </div>
           <div className="grid gap-2">
              <Label>I am a...</Label>
-             <RadioGroup defaultValue="buyer" name="role" onValueChange={(value) => setRole(value as UserRole)} className="flex gap-4">
+             <RadioGroup 
+               value={role} 
+               onValueChange={(value: string) => setRole(value as UserRole)} 
+               className="flex gap-4"
+             >
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="buyer" id="buyer"/>
+                  <RadioGroupItem value="buyer" id="buyer" />
                   <Label htmlFor="buyer" className="font-normal">Buyer</Label>
                 </div>
                 <div className="flex items-center space-x-2">

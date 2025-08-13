@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -17,13 +16,13 @@ import {
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { updateProfile } from "firebase/auth";
 import { doc, updateDoc } from "firebase/firestore";
-import { auth, db, storage } from "@/lib/firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { auth, db } from "@/lib/firebase";
 import { Textarea } from "@/components/ui/textarea";
-import Image from "next/image";
+import { FileUploadV2 } from "@/components/ui/FileUploadV2";
+import { useFileUpload } from "@/hooks/useFileUpload";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -35,14 +34,21 @@ export function EditProfileForm() {
   const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(user?.avatarUrl || null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(
+    user?.photoURL || user?.avatarUrl || null
+  );
+
+  // Initialize file upload hook
+  const { upload: uploadFile, isUploading } = useFileUpload({
+    maxSize: 2 * 1024 * 1024, // 2MB
+    path: 'avatars'
+  });
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      bio: "",
+      name: user?.displayName || user?.name || "",
+      bio: user?.bio || "",
     },
   });
 
@@ -52,7 +58,7 @@ export function EditProfileForm() {
         name: user.name,
         bio: user.bio,
       });
-      setAvatarPreview(user.avatarUrl || null);
+      setAvatarUrl(user.avatarUrl || null);
     }
   }, [user, form]);
 
@@ -62,54 +68,84 @@ export function EditProfileForm() {
     }
   }, [user, authLoading, router]);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    }
-  };
-
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!user) return;
-    setLoading(true);
-
+  const handleAvatarSuccess = useCallback(async (url: string) => {
+    setAvatarUrl(url);
+    
     try {
-      let newAvatarUrl = user.avatarUrl;
-
-      // 1. Upload new avatar if provided
-      if (avatarFile) {
-        const imageRef = ref(storage, `avatars/${user.uid}/${avatarFile.name}`);
-        const snapshot = await uploadBytes(imageRef, avatarFile);
-        newAvatarUrl = await getDownloadURL(snapshot.ref);
-      }
-
-      // 2. Update Firebase Auth profile
+      // Update user profile with new avatar URL
       if (auth.currentUser) {
         await updateProfile(auth.currentUser, {
-          displayName: values.name,
-          photoURL: newAvatarUrl,
+          photoURL: url
+        });
+        
+        // Update user document in Firestore
+        const userRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userRef, {
+          avatarUrl: url,
+          updatedAt: new Date().toISOString()
+        });
+        
+        toast({
+          title: "Success",
+          description: "Profile picture updated successfully!",
         });
       }
-
-      // 3. Update user document in Firestore
-      const userDocRef = doc(db, "users", user.uid);
-      await updateDoc(userDocRef, {
-        name: values.name,
-        bio: values.bio,
-        avatarUrl: newAvatarUrl,
-      });
-
-      toast({ title: "Profile updated successfully!" });
-      router.push("/profile");
-      router.refresh(); // To reflect changes immediately
-
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error.message,
+        title: "Error",
+        description: "Failed to update profile picture. Please try again.",
+      });
+    }
+  }, [toast]);
+  
+  const handleAvatarError = useCallback((error: Error) => {
+    console.error("Upload error:", error);
+    toast({
+      variant: "destructive",
+      title: "Upload Error",
+      description: error.message || "Failed to upload file",
+    });
+  }, [toast]);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (!user) return;
+    
+    setLoading(true);
+
+    try {
+      // Update Firebase Auth profile
+      await updateProfile(auth.currentUser!, {
+        displayName: values.name,
+        photoURL: avatarUrl || user.photoURL || user.avatarUrl || undefined,
+      });
+
+      // Update user document in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await updateDoc(userRef, {
+        name: values.name,
+        displayName: values.name, // Keep both for backward compatibility
+        bio: values.bio || null,
+        ...(avatarUrl ? { 
+          photoURL: avatarUrl,
+          avatarUrl: avatarUrl // Update both for consistency
+        } : {}),
+        updatedAt: new Date().toISOString(),
+      });
+
+      toast({
+        title: "Success",
+        description: "Profile updated successfully!",
+      });
+      
+      router.push(`/profile/${user.uid}`);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to update profile. Please try again.",
       });
     } finally {
       setLoading(false);
@@ -124,21 +160,40 @@ export function EditProfileForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <div className="flex items-center gap-4">
-          <div className="relative">
-            {avatarPreview ? (
-              <Image src={avatarPreview} alt="Avatar preview" width={96} height={96} className="rounded-full object-cover h-24 w-24" />
+          <div className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-border">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="Profile"
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <div className="h-24 w-24 rounded-full bg-muted flex items-center justify-center">
-                <span className="text-2xl text-muted-foreground">{user?.name?.charAt(0)}</span>
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <span className="text-2xl font-bold text-muted-foreground">
+                  {user?.displayName?.[0]?.toUpperCase() || 'U'}
+                </span>
               </div>
             )}
           </div>
           <div>
-            <FormLabel htmlFor="avatar">Avatar</FormLabel>
-            <Input id="avatar" type="file" accept="image/*" onChange={handleAvatarChange} className="mt-2" />
+            <p className="text-sm font-medium mb-1">Profile Picture</p>
+            <p className="text-xs text-muted-foreground mb-2">
+              Recommended: Square image, at least 200x200 pixels
+            </p>
           </div>
         </div>
-
+        <FileUploadV2
+          onSuccess={handleAvatarSuccess}
+          onError={handleAvatarError}
+          maxSize={2 * 1024 * 1024} // 2MB
+          accept={{
+            'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+          }}
+          className="max-w-xs"
+          label="Upload new profile picture"
+          description="JPG, PNG, GIF up to 2MB"
+          disabled={isUploading}
+        />
         <FormField
           control={form.control}
           name="name"

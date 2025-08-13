@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -14,18 +15,55 @@ const backgrounds = [
 
 interface PhotoshootToolProps {
   productImageUrl: string | null;
+  onImageCapture?: (imageUrl: string) => void;
 }
 
-export function PhotoshootTool({ productImageUrl }: PhotoshootToolProps) {
+export function PhotoshootTool({ productImageUrl, onImageCapture }: PhotoshootToolProps) {
   const [selectedBg, setSelectedBg] = useState(backgrounds[0].url);
+  const [isCapturing, setIsCapturing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleCapture = async () => {
+    if (!containerRef.current || !onImageCapture) return;
+    
+    setIsCapturing(true);
+    
+    try {
+      // Use html-to-image to capture the container
+      const htmlToImage = (await import('html-to-image')).default;
+      const dataUrl = await htmlToImage.toPng(containerRef.current);
+      
+      // Pass the captured image URL to the parent
+      onImageCapture(dataUrl);
+    } catch (error) {
+      console.error('Error capturing image:', error);
+    } finally {
+      setIsCapturing(false);
+    }
+  };
 
   return (
-    <Card>
+    <Card className="relative">
+      {onImageCapture && (
+        <div className="absolute top-2 right-2 z-10">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleCapture}
+            disabled={!productImageUrl || isCapturing}
+          >
+            {isCapturing ? 'Capturing...' : 'Capture'}
+          </Button>
+        </div>
+      )}
       <CardHeader>
         <CardTitle className="font-headline">Virtual Photoshoot</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="relative w-full aspect-[3/4] bg-muted rounded-lg overflow-hidden mb-4">
+        <div 
+          ref={containerRef}
+          className="relative w-full aspect-[3/4] bg-muted rounded-lg overflow-hidden mb-4"
+        >
           {productImageUrl ? (
             <>
               <Image src={selectedBg} layout="fill" objectFit="cover" alt="Background" data-ai-hint="fashion background" />

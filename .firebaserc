@@ -1,0 +1,18 @@
+{
+  "projects": {
+    "default": "connectbuy"
+  },
+  "targets": {
+    "connectbuy": {
+      "hosting": {
+        "connectbuy-1bca4": [
+          "connectbuy"
+        ],
+        "connectbuy-target": [
+          "connectbuy-1bca4"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}
