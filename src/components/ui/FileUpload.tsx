@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, ReactNode } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useStorage } from '@/hooks/useStorage';
 import { Button } from './button';
@@ -15,6 +15,7 @@ interface FileUploadProps {
   disabled?: boolean;
   label?: string;
   description?: string;
+  children?: ReactNode;
 }
 
 export function FileUpload({
@@ -28,6 +29,7 @@ export function FileUpload({
   disabled = false,
   label = 'Drag & drop a file here, or click to select',
   description = 'PNG, JPG, GIF up to 5MB',
+  children,
 }: FileUploadProps) {
   const [fileError, setFileError] = useState<string | null>(null);
   const { upload, isUploading, progress, error } = useStorage({
@@ -83,33 +85,35 @@ export function FileUpload({
         )}
       >
         <input {...getInputProps()} />
-        {isUploading ? (
-          <div className="space-y-2">
-            <Icons.upload className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium">Uploading...</p>
-            <Progress value={progress} className="h-2" />
-            <p className="text-xs text-muted-foreground">{Math.round(progress)}%</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <Icons.upload className="mx-auto h-8 w-8 text-muted-foreground" />
-            <p className="text-sm font-medium">
-              {isDragActive ? 'Drop the file here' : label}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {description}
-            </p>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="mt-2"
-              disabled={disabled}
-              onClick={(e) => e.stopPropagation()}
-            >
-              Select File
-            </Button>
-          </div>
+        {children || (
+          isUploading ? (
+            <div className="space-y-2">
+              <Icons.upload className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">Uploading...</p>
+              <Progress value={progress} className="h-2" />
+              <p className="text-xs text-muted-foreground">{Math.round(progress)}%</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              <Icons.upload className="mx-auto h-8 w-8 text-muted-foreground" />
+              <p className="text-sm font-medium">
+                {isDragActive ? 'Drop the file here' : label}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {description}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                disabled={disabled}
+                onClick={(e) => e.stopPropagation()}
+              >
+                Select File
+              </Button>
+            </div>
+          )
         )}
       </div>
       

@@ -1,11 +1,12 @@
 // Firebase configuration for ConnectBuy
 // This file is for reference only - use .env.local for actual deployment
 
-module.exports = {
-  apiKey: "AIzaSyBPWUZKbPBk8gEx1lp630tE8B4WgkIrNzM",
-  authDomain: "connectbuy.firebaseapp.com",
-  projectId: "connectbuy",
-  storageBucket: "connectbuy.appspot.com",
-  messagingSenderId: "344663685531",
-  appId: "1:344663685531:web:8ea15a0e5b1d068132493e"
+const firebaseConfig = {
+  apiKey: "AIzaSyD5UkrWBFvYmfiHNjz8VFOoJcqRcp3ptXs",
+  authDomain: "connectbuy-cf53f.firebaseapp.com",
+  projectId: "connectbuy-cf53f",
+  storageBucket: "connectbuy-cf53f.firebasestorage.app",
+  messagingSenderId: "961503379393",
+  appId: "1:961503379393:web:2981f9ca3fa9b78f67f940",
+  measurementId: "G-9X8R73F4E7"
 };

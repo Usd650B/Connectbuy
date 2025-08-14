@@ -1,7 +1,59 @@
-# Settings to manage and configure a Firebase App Hosting backend.
+# Firebase App Hosting configuration for Next.js
 # https://firebase.google.com/docs/app-hosting/configure
 
+# Build configuration
+build:
+  # Install dependencies and build the Next.js app
+  command: |
+    npm install
+    npm run build
+  
+  # Output directory for the build
+  output: .next
+
+# Runtime configuration
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
+  # Maximum number of instances
   maxInstances: 1
+  
+  # Port the app listens on (must match your Next.js configuration)
+  port: 3000
+  
+  # Environment variables
+  env:
+    - variable: NODE_ENV
+      value: production
+    - variable: NEXT_TELEMETRY_DISABLED
+      value: "1"
+    - variable: PORT
+      value: "3000"
+
+# Health check configuration
+healthCheck:
+  path: "/"
+  timeoutSeconds: 5
+  checkIntervalSeconds: 30
+  healthyThreshold: 1
+  unhealthyThreshold: 2
+
+# Scaling configuration
+scaling:
+  minInstances: 0
+  maxInstances: 5
+  cooldownPeriod: 180s
+  cpuUtilization:
+    targetUtilization: 0.6
+
+# Service account to use for this service
+serviceAccount: default
+
+# Resource allocation
+resources:
+  cpu: 1
+  memory: 512Mi
+  requestTimeout: 300s
+
+# VPC connector (if needed for private network access)
+# vpcAccess:
+#   connector: projects/YOUR_PROJECT_ID/locations/REGION/connectors/CONNECTOR_NAME
+#   egress: ALL_TRAFFIC

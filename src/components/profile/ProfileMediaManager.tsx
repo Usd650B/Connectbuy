@@ -60,9 +60,9 @@ export function ProfileMediaManager() {
       }
       
       // If this is a cover photo update and there was a previous cover photo, delete it
-      if (type === 'cover' && userData?.coverPhotoURL) {
+      if (type === 'cover' && userData?.coverPhotoUrl) {
         try {
-          await deleteFile(userData.coverPhotoURL);
+          await deleteFile(userData.coverPhotoUrl);
         } catch (error) {
           console.error('Error deleting old cover photo:', error);
           // Don't fail the operation if deletion fails
@@ -91,7 +91,7 @@ export function ProfileMediaManager() {
     setActiveUpload(type);
     
     try {
-      const field = type === 'avatar' ? 'photoURL' : 'coverPhotoURL';
+      const field = type === 'avatar' ? 'photoURL' : 'coverPhotoUrl';
       const currentUrl = userData?.[field];
       
       if (!currentUrl) return;
@@ -142,10 +142,10 @@ export function ProfileMediaManager() {
     <div className="space-y-8">
       {/* Cover Photo */}
       <div className="relative rounded-lg overflow-hidden bg-muted/50">
-        {userData?.coverPhotoURL ? (
+        {userData?.coverPhotoUrl ? (
           <div className="group relative">
             <img
-              src={userData.coverPhotoURL}
+              src={userData.coverPhotoUrl}
               alt="Cover"
               className="w-full h-48 md:h-64 object-cover"
             />

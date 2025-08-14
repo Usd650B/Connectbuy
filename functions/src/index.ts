@@ -1,16 +1,10 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
 import next from 'next';
 
 // Initialize Firebase Admin
 admin.initializeApp();
-
-// Get the current file's directory
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 
 // Initialize Next.js app
 const nextApp = next({
@@ -23,6 +17,7 @@ const nextApp = next({
 
 const nextHandler = nextApp.getRequestHandler();
 
+// Create the server function
 export const nextServer = functions
   .runWith({
     memory: '1GB',
@@ -31,13 +26,15 @@ export const nextServer = functions
   .https.onRequest(async (req, res) => {
     // Handle static files and assets
     if (req.path.startsWith('/_next') || req.path.startsWith('/static')) {
-      const pathToStaticFile = join(__dirname, '..', 'public', req.path);
-      return nextApp.serveStatic(req, res, pathToStaticFile);
+      const pathToStaticFile = join(__dirname, '..', '.next', 'static', req.path.replace(/^\/_next\//, ''));
+      return res.sendFile(pathToStaticFile);
     }
     
     // Handle all other requests with Next.js
+  
+    // Prepare the Next.js app
+    await nextApp.prepare();
+    
+    // Handle the request
     return nextHandler(req, res);
   });
-
-// Export the function
-export { nextServer };

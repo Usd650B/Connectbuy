@@ -91,11 +91,11 @@ export function ProfileStorage() {
       setIsUpdating(true);
       
       // Store the old cover photo URL to delete it later if needed
-      const oldCoverPhotoUrl = userData?.coverPhotoURL;
+      const oldCoverPhotoUrl = userData?.coverPhotoUrl;
       
       // Update the user's profile
       await updateDoc(doc(db, 'users', user.uid), {
-        coverPhotoURL: url,
+        coverPhotoUrl: url,
       });
       
       // Reload user data to reflect changes
@@ -142,10 +142,10 @@ export function ProfileStorage() {
       <div className="space-y-4">
         <h3 className="text-lg font-medium">Cover Photo</h3>
         <div className="relative h-48 overflow-hidden rounded-lg bg-muted/50 border border-dashed">
-          {userData?.coverPhotoURL ? (
+          {userData?.coverPhotoUrl ? (
             <>
               <img
-                src={userData.coverPhotoURL}
+                src={userData.coverPhotoUrl}
                 alt="Cover"
                 className="w-full h-full object-cover"
               />

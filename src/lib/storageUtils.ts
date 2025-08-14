@@ -4,7 +4,7 @@ import { getAuth } from 'firebase/auth';
 
 const storage = getStorage();
 
-type UploadOptions = {
+export type UploadOptions = {
   path?: string;
   metadata?: Record<string, string>;
   onProgress?: (progress: number) => void;

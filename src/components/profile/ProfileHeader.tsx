@@ -3,7 +3,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { UserProfile } from "@/types";
-import { Edit, Globe, MapPin, Twitter, Instagram } from "lucide-react";
+import { Edit, Globe, MapPin, Twitter, Instagram, MessageSquare, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { FileUploadV2 } from "../ui/FileUploadV2";
@@ -87,23 +87,32 @@ export function ProfileHeader({ profileUser, isOwnProfile, onUpdate }: ProfileHe
         
         {isOwnProfile && (
           <div className="absolute top-4 right-4 flex gap-2">
-            <FileUploadV2
-              onSuccess={handleCoverPhotoSuccess}
-              onError={handleCoverPhotoError}
-              maxSize={5 * 1024 * 1024} // 5MB
-              accept={{
-                'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
-              }}
-              className="w-auto"
-              label={profileUser.coverPhotoUrl ? "Change Cover" : "Add Cover"}
-              variant="outline"
-              disabled={isUploading}
-              buttonProps={{
-                size: "sm",
-                className: "bg-background/80 backdrop-blur-sm hover:bg-background",
-                children: profileUser.coverPhotoUrl ? "Change Cover" : "Add Cover"
-              }}
-            />
+            <div className="relative">
+              <FileUploadV2
+                onSuccess={handleCoverPhotoSuccess}
+                onError={handleCoverPhotoError}
+                maxSize={5 * 1024 * 1024} // 5MB
+                accept={{
+                  'image/*': ['.png', '.jpg', '.jpeg', '.gif', '.webp']
+                }}
+                className="w-auto"
+                label=""
+                disabled={isUploading}
+              />
+              <Button 
+                variant="outline"
+                size="sm"
+                className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm hover:bg-background"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // Trigger file input click
+                  const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+                  fileInput?.click();
+                }}
+              >
+                {profileUser.coverPhotoUrl ? "Change Cover" : "Add Cover"}
+              </Button>
+            </div>
             <Button 
               variant="ghost" 
               size="sm" 

@@ -1,15 +1,12 @@
 {
   "projects": {
-    "default": "connectbuy"
+    "default": "connectbuy-cf53f"
   },
   "targets": {
-    "connectbuy": {
+    "connectbuy-cf53f": {
       "hosting": {
-        "connectbuy-1bca4": [
-          "connectbuy"
-        ],
         "connectbuy-target": [
-          "connectbuy-1bca4"
+          "connectbuy-cf53f"
         ]
       }
     }

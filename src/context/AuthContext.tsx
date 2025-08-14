@@ -8,10 +8,17 @@ import { UserProfile } from "@/types";
 
 interface AuthContextType {
   user: UserProfile | null;
+  userData: UserProfile | null; // Alias for user for backward compatibility
   loading: boolean;
+  reloadUser: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ 
+  user: null, 
+  userData: null, 
+  loading: true, 
+  reloadUser: async () => {} 
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
@@ -66,8 +73,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, []);
 
+  const reloadUser = async () => {
+    if (!auth.currentUser) {
+      setUser(null);
+      return;
+    }
+    
+    try {
+      const userDocRef = doc(db, "users", auth.currentUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        setUser({ ...userDocSnap.data() as UserProfile, uid: auth.currentUser.uid });
+      }
+    } catch (error) {
+      console.error("Error reloading user:", error);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      userData: user, // Alias for backward compatibility
+      loading, 
+      reloadUser 
+    }}>
       {children}
     </AuthContext.Provider>
   );
